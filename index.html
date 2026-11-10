@@ -304,9 +304,9 @@ input[type=number]{-moz-appearance:textfield;}
           <div class="inv-val" id="inv-plazo">180</div>
         </div>
         <div>
-          <span class="f-lbl grn">TNA Inversor (90%)</span>
-          <div class="inv-val" id="inv-tna">45,00%</div>
-          <div class="inv-note">90% de la tasa del tomador</div>
+          <span class="f-lbl grn">TNA Inversor</span>
+          <div class="inv-val" id="inv-tna">50,00%</div>
+          <div class="inv-note">Misma tasa que el tomador</div>
         </div>
       </div>
     </div>
@@ -336,7 +336,7 @@ input[type=number]{-moz-appearance:textfield;}
           </div>
           <div class="r-lbl">Ahorro IIGG</div>
           <div class="r-val grn" id="rc-iigg">&#8212;</div>
-          <div class="r-desc">Deducci&oacute;n impositiva sobre intereses pagados</div>
+          <div class="r-desc">Deducci&oacute;n impositiva sobre intereses y comisi&oacute;n pagados</div>
         </div>
         <div class="r-card">
           <div class="r-icon grn">
@@ -377,7 +377,7 @@ input[type=number]{-moz-appearance:textfield;}
       </div>
       <div>
         <div class="neto-lbl">Ahorro Neto Total de la Operaci&oacute;n</div>
-        <div class="neto-sub">Intereses Exentos &minus; Intereses Pagados + Ahorro IIGG + Ahorro Imp. Cedular</div>
+        <div class="neto-sub">Ahorro IIGG + Ahorro Imp. Cedular &minus; Comisi&oacute;n M23</div>
       </div>
     </div>
     <div class="neto-val" id="rc-neto">&#8212;</div>
@@ -410,10 +410,10 @@ input[type=number]{-moz-appearance:textfield;}
   <hr class="sep">
   <div class="section-t">Detalle de la Operaci&oacute;n</div>
   <div class="kpi-grid">
-    <div class="kpi org"><div class="kpi-lbl">Cuota Mensual Tomador</div><div class="kpi-val" id="k-cuota-tom">&#8212;</div><div class="kpi-sub">Sistema franc&eacute;s &middot; tasa tomador</div></div>
-    <div class="kpi nvy"><div class="kpi-lbl">Cuota Mensual Inversor</div><div class="kpi-val" id="k-cuota-inv">&#8212;</div><div class="kpi-sub">Sistema franc&eacute;s &middot; tasa inversor (M23)</div></div>
-    <div class="kpi pch"><div class="kpi-lbl">Costo Neto M23 por Cuota</div><div class="kpi-val" id="k-dif-cuota">&#8212;</div><div class="kpi-sub">Diferencia mensual tomador &minus; inversor</div></div>
-    <div class="kpi grn"><div class="kpi-lbl">TIR del Producto</div><div class="kpi-val" id="k-tir">&#8212;</div><div class="kpi-sub">Tasa interna de retorno anual</div></div>
+    <div class="kpi org"><div class="kpi-lbl">Cuota Mensual Tomador</div><div class="kpi-val" id="k-cuota-tom">&#8212;</div><div class="kpi-sub">Sistema franc&eacute;s + comisi&oacute;n M23</div></div>
+    <div class="kpi nvy"><div class="kpi-lbl">Cuota Mensual Inversor</div><div class="kpi-val" id="k-cuota-inv">&#8212;</div><div class="kpi-sub">Sistema franc&eacute;s &middot; misma tasa que el tomador</div></div>
+    <div class="kpi pch"><div class="kpi-lbl">Comisi&oacute;n M23 Total</div><div class="kpi-val" id="k-com-total">&#8212;</div><div class="kpi-sub">Monto total de la operaci&oacute;n</div></div>
+    <div class="kpi grn"><div class="kpi-lbl">Retorno sobre Comisi&oacute;n</div><div class="kpi-val" id="k-ret-com">&#8212;</div><div class="kpi-sub">Ahorro neto por cada $1 de comisi&oacute;n</div></div>
   </div>
 
   <!-- TABLA -->
@@ -430,11 +430,11 @@ input[type=number]{-moz-appearance:textfield;}
         <thead>
           <tr>
             <th rowspan="2" style="text-align:left;padding-left:18px;">Cuota</th>
-            <th colspan="4">Tomador del Cr&eacute;dito</th>
+            <th colspan="6">Tomador del Cr&eacute;dito</th>
             <th colspan="3" class="gi">Inversor Garante (M23)</th>
           </tr>
           <tr>
-            <th>Cuota ($)</th><th>Inter&eacute;s ($)</th><th>Amortiz. ($)</th><th>Saldo ($)</th>
+            <th>Cuota ($)</th><th>Inter&eacute;s ($)</th><th>Amortiz. ($)</th><th>Saldo ($)</th><th>Comisi&oacute;n M23 ($)</th><th>Total a Pagar ($)</th>
             <th class="gi">Cuota ($)</th><th class="gi">Inter&eacute;s ($)</th><th class="gi">Saldo ($)</th>
           </tr>
         </thead>
@@ -444,6 +444,7 @@ input[type=number]{-moz-appearance:textfield;}
             <td>TOTALES</td>
             <td id="ft-cuota-tom">&#8212;</td><td id="ft-int-tom">&#8212;</td>
             <td id="ft-amort-tom">&#8212;</td><td>&#8212;</td>
+            <td id="ft-com-tom">&#8212;</td><td id="ft-total-tom">&#8212;</td>
             <td id="ft-cuota-inv">&#8212;</td><td id="ft-int-inv">&#8212;</td><td>&#8212;</td>
           </tr>
         </tfoot>
@@ -471,18 +472,6 @@ function pmt(rate,nper,pv){
   return pv*rate*x/(x-1);
 }
 
-function irr(flows){
-  var lo=-0.9999,hi=5.0,tol=1e-8,maxIter=1000;
-  function npv(r){return flows.reduce(function(a,cf,t){return a+cf/Math.pow(1+r,t);},0);}
-  var nLo=npv(lo);
-  for(var i=0;i<maxIter;i++){
-    var mid=(lo+hi)/2,nMid=npv(mid);
-    if(Math.abs(nMid)<tol)return mid;
-    if(nLo*nMid<0)hi=mid;else{lo=mid;nLo=nMid;}
-  }
-  return(lo+hi)/2;
-}
-
 function fmtM(v){if(v>=1e9)return"$ "+(v/1e9).toFixed(2)+"MM";if(v>=1e6)return"$ "+(v/1e6).toFixed(1)+"M";return"$ "+Math.round(v).toLocaleString("es-AR");}
 function syncPanels(){
   var v=parseFloat(document.getElementById("inp-monto").value)||0;
@@ -490,7 +479,7 @@ function syncPanels(){
   var tna=parseFloat(document.getElementById("sl-tna").value)||80;
   setEl("inv-monto",fmtM(v));
   setEl("inv-plazo",d);
-  setEl("inv-tna",(tna*0.9).toFixed(2)+"%");
+  setEl("inv-tna",tna.toFixed(2).replace(".",",")+"%");
 }
 function onMontoChange(){
   var v=parseFloat(document.getElementById("inp-monto").value)||0;
@@ -528,56 +517,49 @@ function calcular(){
   var aliIIGG=0.35;
   var aliCed=0.07;
   var nCuotas=Math.round(plazoDias/30);
-  var tnaInv=tnaTom*0.9;
-  var rMenTom=tnaTom/12;
-  var rMenInv=tnaInv/12;
+  var rMen=tnaTom/12;              // tasa unica: tomador e inversor
+  var rMenRef=tnaTom*0.9/12;       // solo para calcular la comision (spread de referencia 90%)
   if(capital<=0||nCuotas<=0)return;
 
-  var cuotaTom=pmt(rMenTom,nCuotas,capital);
-  var cuotaInv=pmt(rMenInv,nCuotas,capital);
+  var cuotaFr=pmt(rMen,nCuotas,capital);
+  // Comision M23 por cuota = diferencia de cuota del esquema anterior (tasa inversor 90%).
+  // Mantiene identica la ganancia de M23; se muestra solo en pesos.
+  var comCuota=cuotaFr-pmt(rMenRef,nCuotas,capital);
   var rowsTom=[],rowsInv=[];
-  var saldoT=capital,saldoI=capital;
-  var sumCuotaTom=0,sumIntTom=0,sumCuotaInv=0,sumIntInv=0;
+  var saldo=capital;
+  var sumCuota=0,sumInt=0,sumCom=0;
 
   for(var k=1;k<=nCuotas;k++){
-    var intT=rMenTom*saldoT,amortT=cuotaTom-intT;
-    saldoT-=amortT; if(saldoT<0.01)saldoT=0;
-    var intI=rMenInv*saldoI,amortI=cuotaInv-intI;
-    saldoI-=amortI; if(saldoI<0.01)saldoI=0;
-    sumCuotaTom+=cuotaTom; sumIntTom+=intT;
-    sumCuotaInv+=cuotaInv; sumIntInv+=intI;
-    rowsTom.push({cuota:cuotaTom,int:intT,amort:amortT,saldo:saldoT});
-    rowsInv.push({cuota:cuotaInv,int:intI,saldo:saldoI});
+    var intK=rMen*saldo,amortK=cuotaFr-intK;
+    saldo-=amortK; if(saldo<0.01)saldo=0;
+    sumCuota+=cuotaFr; sumInt+=intK; sumCom+=comCuota;
+    rowsTom.push({cuota:cuotaFr,int:intK,amort:amortK,saldo:saldo,com:comCuota,total:cuotaFr+comCuota});
+    rowsInv.push({cuota:cuotaFr,int:intK,saldo:saldo});
   }
 
-  var intTomTotal=sumIntTom;
-  var intInvTotal=sumIntInv;
-  var ahorroIIGG=intTomTotal*aliIIGG;
+  var intTomTotal=sumInt;
+  var intInvTotal=sumInt;
+  var comTotal=sumCom;
+  var ahorroIIGG=(intTomTotal+comTotal)*aliIIGG;
   var ahorroced=intInvTotal*aliCed;
-  var ahorroNeto=intInvTotal-intTomTotal+ahorroIIGG+ahorroced;
-
-  // TIR mensual sobre flujos de diferencia de cuotas
-  var difMen=-(cuotaTom-cuotaInv);
-  var flows=[];
-  for(var i=1;i<=nCuotas;i++){
-    flows.push(i<nCuotas?difMen:difMen+ahorroIIGG+ahorroced);
-  }
-  var tirMen=irr(flows);
-  var tirAnual=Math.pow(1+tirMen,12)-1;
+  var ahorroNeto=ahorroIIGG+ahorroced-comTotal;
+  var retCom=comTotal>0?ahorroNeto/comTotal:0;
 
   setEl("rc-int-tom","&#8722;"+ars(intTomTotal,true));
   setEl("rc-int-inv","+"+ars(intInvTotal,true));
   setEl("rc-iigg","+"+ars(ahorroIIGG,true));
   setEl("rc-ced","+"+ars(ahorroced,true));
   setEl("rc-neto",(ahorroNeto>=0?"+":"")+ars(ahorroNeto,true));
-  setEl("k-cuota-tom",ars(cuotaTom,true));
-  setEl("k-cuota-inv",ars(cuotaInv,true));
-  setEl("k-dif-cuota",ars(cuotaTom-cuotaInv,true));
-  setEl("k-tir",(tirAnual*100).toFixed(1)+"%");
-  setEl("ft-cuota-tom",ars(sumCuotaTom,true));
+  setEl("k-cuota-tom",ars(cuotaFr+comCuota,true));
+  setEl("k-cuota-inv",ars(cuotaFr,true));
+  setEl("k-com-total",ars(comTotal));
+  setEl("k-ret-com",retCom.toFixed(1).replace(".",",")+"&times;");
+  setEl("ft-cuota-tom",ars(sumCuota,true));
   setEl("ft-int-tom",ars(intTomTotal,true));
   setEl("ft-amort-tom",ars(capital,true));
-  setEl("ft-cuota-inv",ars(sumCuotaInv,true));
+  setEl("ft-com-tom",ars(comTotal,true));
+  setEl("ft-total-tom",ars(sumCuota+comTotal,true));
+  setEl("ft-cuota-inv",ars(sumCuota,true));
   setEl("ft-int-inv",ars(intInvTotal,true));
 
   var kNetoEl=document.getElementById("rc-neto");
@@ -593,6 +575,8 @@ function calcular(){
         +"<td class='tc'>"+ars(t.int,true)+"</td>"
         +"<td class='tc'>"+ars(t.amort,true)+"</td>"
         +"<td class='tc'>"+ars(t.saldo,true)+"</td>"
+        +"<td class='tc'>"+ars(t.com,true)+"</td>"
+        +"<td class='tb'>"+ars(t.total,true)+"</td>"
         +"<td class='ti'>"+ars(inv.cuota,true)+"</td>"
         +"<td class='ti'>"+ars(inv.int,true)+"</td>"
         +"<td class='ti'>"+ars(inv.saldo,true)+"</td>"
